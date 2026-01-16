@@ -44,7 +44,7 @@ $$
 4.  This values provide the final score using the formula
    
 $$
-\text{Average score} = \frac{(\texttt{avg-rbh-score} \times \texttt{rbh-fraction-symmetric}) + \texttt{symmetric-avg} + \texttt{greedy-1to1-avg}}{3}
+\text{Average score} = \frac{(\texttt{avg-rbh-score} \times \texttt{rbh-fraction-symmetric}) + \texttt{symmetric-avg}}{2}
 $$
 
 
