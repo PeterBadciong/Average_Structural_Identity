@@ -8,9 +8,9 @@ from pathlib import Path
 from collections import defaultdict
 
 
-# ============================================================
+
 # SETTINGS
-# ============================================================
+
 
 parser = argparse.ArgumentParser(description="Foldseek RBH + Bidirectional TM Pipeline")
 
@@ -38,9 +38,9 @@ THREAD_LIMIT = min(THREADS, os.cpu_count() or THREADS)
 SENSITIVITY = args.sensitivity
 TM_THRESHOLD = args.tm_threshold
 
-# ============================================================
+
 # THREAD CONTROL
-# ============================================================
+
 
 os.environ["OMP_NUM_THREADS"] = str(THREAD_LIMIT)
 os.environ["MKL_NUM_THREADS"] = str(THREAD_LIMIT)
@@ -51,9 +51,9 @@ os.environ["MMSEQS_NUM_THREADS"] = str(THREAD_LIMIT)
 
 print("THREAD LIMIT ENFORCED:", THREAD_LIMIT)
 
-# ============================================================
+
 # PATHS
-# ============================================================
+
 
 SPLIT_DIR = f"{WORKDIR}/split"
 DB_PATH = f"{WORKDIR}/db"
@@ -73,23 +73,23 @@ PAIRWISE_MATCHES_TM = f"{WORKDIR}/pairwise_RBH_matches_TMfiltered.tsv"
 # NEW: bidirectional TM-passing pairs (no best-hit requirement)
 PAIRWISE_TM_BIDIRECTIONAL = f"{WORKDIR}/pairwise_TM_bidirectional.tsv"
 
-# ============================================================
+
 # CREATE DIRECTORIES
-# ============================================================
+
 
 Path(WORKDIR).mkdir(parents=True, exist_ok=True)
 Path(SPLIT_DIR).mkdir(parents=True, exist_ok=True)
 
-# ============================================================
+
 # STORAGE
-# ============================================================
+
 
 protein_to_genome = {}
 genome_size = defaultdict(int)
 
-# ============================================================
+
 # STEP 1: SPLIT PROTEOMES
-# ============================================================
+
 
 print("Splitting proteomes...")
 
@@ -148,9 +148,9 @@ for pdb in Path(INPUT_DIR).glob("*.pdb"):
 print("\nGenomes:", len(genome_size))
 print("Proteins:", protein_count)
 
-# ============================================================
+
 # SAVE MAP
-# ============================================================
+
 
 print("Saving protein map...")
 
@@ -158,9 +158,9 @@ with open(MAP_FILE, "w") as f:
     for protein, genome in protein_to_genome.items():
         f.write(f"{protein}\t{genome}\n")
 
-# ============================================================
+
 # STEP 2: CREATE DB
-# ============================================================
+
 
 print("\nCreating Foldseek database...")
 
@@ -171,9 +171,9 @@ subprocess.run([
     DB_PATH
 ], check=True)
 
-# ============================================================
+
 # STEP 3: SEARCH
-# ============================================================
+
 
 print("Running Foldseek search...")
 
@@ -189,9 +189,9 @@ subprocess.run([
     "-a"
 ], check=True)
 
-# ============================================================
+
 # STEP 4: CONVERT
-# ============================================================
+
 
 print("Converting alignments...")
 
@@ -207,9 +207,9 @@ subprocess.run([
     "query,target,qtmscore,ttmscore,alntmscore,evalue"
 ], check=True)
 
-# ============================================================
+
 # STEP 5: BUILD BEST HITS + TM-PASSING MAP
-# ============================================================
+
 
 print("Building best-hit dictionaries and TM-passing map...")
 
@@ -281,9 +281,9 @@ print("ALL best hits:", len(best_hit_all))
 print("TM best hits:", len(best_hit_tm))
 print("TM-passing directional hits (for bidirectional):", len(tm_pass_hits))
 
-# ============================================================
+
 # RBH FUNCTION (GENOME+PROTEIN NORMALIZATION)
-# ============================================================
+
 
 def compute_rbh(best_hit, pairwise_tsv, summary_csv, label):
 
@@ -428,9 +428,9 @@ def compute_rbh(best_hit, pairwise_tsv, summary_csv, label):
     print("Finished RBH summary:", summary_csv)
 
 
-# ============================================================
+
 # BIDIRECTIONAL TM-PASSING FUNCTION
-# ============================================================
+
 
 def compute_bidirectional_tm_pairs(tm_pass_hits, out_tsv):
 
@@ -501,9 +501,9 @@ def compute_bidirectional_tm_pairs(tm_pass_hits, out_tsv):
     print("Finished bidirectional TM-passing pairs:", count_pairs)
 
 
-# ============================================================
+
 # RUN RBH (ALL + TM-FILTERED) AND BIDIRECTIONAL
-# ============================================================
+
 
 compute_rbh(
     best_hit_all,
@@ -524,9 +524,9 @@ compute_bidirectional_tm_pairs(
     PAIRWISE_TM_BIDIRECTIONAL
 )
 
-# ============================================================
+
 # CLEANUP
-# ============================================================
+
 
 if os.path.exists(RAW_TSV):
     os.remove(RAW_TSV)
