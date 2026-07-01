@@ -3,14 +3,14 @@ import subprocess
 from pathlib import Path
 import sys
 
-# ============================================================
+
 # Choose Bacterial/Archaeal or Viral
-# ============================================================
+
 MODE = "Bacterial"   # options: "viral" or "bacterial"
 
-# ============================================================
+
 # STEP TOGGLES — TURN STEPS ON/OFF HERE
-# ============================================================
+
 
 RUN_STEP1 = True   # Foldseek RBH
 RUN_STEP1B = True      # Paralog Identification
@@ -22,9 +22,9 @@ RUN_STEP6 = True       # Make merged File with AAI and ASI
 RUN_STEP7 = True
 RUN_PLDDT = True
 RUN_ANNOTATION = True
-# ============================================================
+
 # USER CONFIGURATION (ALL SETTINGS LIVE HERE)
-# ============================================================
+
 
 # ---- Script paths ----
 SCRIPT1 = "/storage2/scratch/pbadciong/ASI/FoldseekerSuite/FoldseekerAllinOne/ASI_Foldseek.py"
@@ -95,9 +95,9 @@ COVERAGE_CUTOFF = 0.50
 
 
 
-# ============================================================
+
 # UTILITIES
-# ============================================================
+
 
 def run(cmd):
     print(f"\n[RUN] {cmd}")
@@ -108,9 +108,9 @@ def check_exists(path):
         print(f"[ERROR] Required file not found: {path}")
         sys.exit(1)
 
-# ============================================================
+
 # MAIN PIPELINE
-# ============================================================
+
 
 def main():
 
@@ -123,9 +123,9 @@ def main():
     Path(WORKDIR_5).mkdir(parents=True, exist_ok=True)
 
 
-    # --------------------------------------------------------
+    
     # STEP 1
-    # --------------------------------------------------------
+    
     if RUN_STEP1:
         print("\n==============================")
         print(" STEP 1: Running Foldseek RBH ")
@@ -157,9 +157,9 @@ def main():
         print("\n[SKIP] Step 1 disabled — using existing RBH file")
 
 
-        # --------------------------------------------------------
+        
         # STEP 1B — Paralog Detection (within-genome)
-        # --------------------------------------------------------
+        
         if RUN_STEP1B:
             print("\n==============================")
             print(" STEP 1B: Detecting Paralogs  ")
@@ -184,9 +184,9 @@ def main():
             print("\n[SKIP] Step 1B disabled")
 
 
-    # --------------------------------------------------------
+    
     # STEP 2
-    # --------------------------------------------------------
+    
     if RUN_STEP2:
         print("\n==============================")
         print(" STEP 2: Running AAI Pipeline ")
@@ -217,9 +217,9 @@ def main():
     final_csv = f"{WORKDIR_2}/ALL_GENOMES_FINAL.csv"
     check_exists(final_csv)
 
-    # --------------------------------------------------------
+    
     # STEP 3
-    # --------------------------------------------------------
+    
     if RUN_STEP3:
         print("\n==============================")
         print(" STEP 3: Annotation Comparison ")
@@ -236,9 +236,9 @@ def main():
     else:
         print("\n[SKIP] Step 3 disabled")
 
-    # --------------------------------------------------------
+    
     # STEP 4
-    # --------------------------------------------------------
+    
     if RUN_STEP4:
         print("\n==============================")
         print(" STEP 4: Pairwise RBH AAI     ")
@@ -257,9 +257,9 @@ def main():
     else:
         print("\n[SKIP] Step 4 disabled")
 
-    # --------------------------------------------------------
+    
     # STEP 5
-    # --------------------------------------------------------
+    
     if RUN_STEP5:
         print("\n==============================")
         print(" STEP 5: Foldseek vs AAI RBH  ")
@@ -307,9 +307,9 @@ def main():
 
         run(cmd6)
 
-        # --------------------------------------------------------
+        
         # STEP 7
-        # --------------------------------------------------------
+        
         if RUN_STEP7:
             print("\n==============================")
             print(" STEP 7: Taxonomic TM vs AAI Figures ")
