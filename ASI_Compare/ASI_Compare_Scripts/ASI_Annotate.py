@@ -244,9 +244,8 @@ def main():
     pairs, proteins = parse_tsv(INPUT_TSV)
     print(f"Proteins: {len(proteins)}")
 
-    # --------------------------------------------------------
     # LOAD SEQUENCES
-    # --------------------------------------------------------
+    
 
     seqs = {}
     for faa in Path(FAA_FOLDER).glob("*.faa"):
@@ -255,9 +254,9 @@ def main():
     seqs = {k: v for k, v in seqs.items() if k in proteins}
     print(f"Loaded sequences: {len(seqs)}")
 
-    # ========================================================
+    
     # OPTIONAL ANNOTATION
-    # ========================================================
+    
 
     if RUN_ANNOTATION:
         print("Running annotation (HMMER + annotation table)...")
@@ -308,9 +307,9 @@ def main():
         hmm_evalue = {p: "NA" for p in proteins}
         annotations = {p: "NA" for p in proteins}
 
-    # ========================================================
+    
     # FAST DIAMOND AAI (OPTIMIZED)
-    # ========================================================
+    
 
     print("\nRunning optimized DIAMOND AAI...")
 
@@ -386,9 +385,9 @@ def main():
 
     print(f"AAI computed for {len(aai)//2} protein pairs")
 
-    # ========================================================
+    
     # OUTPUT
-    # ========================================================
+    
 
     out_csv = Path(WORK_DIR) / "ALL_GENOMES_FINAL.csv"
 
