@@ -2,101 +2,62 @@ import os
 import subprocess
 from pathlib import Path
 import sys
+import argparse
 
+# Command-line argument parsing
 
-# Choose Bacterial/Archaeal or Viral
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="ASI Pipeline — Foldseek RBH, AAI, Annotation, TM/AAI Merge"
+    )
 
-MODE = "Bacterial"   # options: "viral" or "bacterial"
+    # REQUIRED INPUTS
+    parser.add_argument(
+        "-a", "--aminoacids",
+        required=True,
+        help="Folder containing original protein FASTA files"
+    )
+    parser.add_argument(
+        "-s", "--structures",
+        required=True,
+        help="Folder containing predicted protein structures (PDB files)"
+    )
+    parser.add_argument(
+        "-o", "--output",
+        required=True,
+        help="Output directory"
+    )
 
+    mode_group = parser.add_mutually_exclusive_group(required=True)
+    mode_group.add_argument(
+        "-b", "--bacterial",
+        action="store_true",
+        help="Run pipeline in Bacterial/Archaeal mode"
+    )
+    mode_group.add_argument(
+        "-v", "--viral",
+        action="store_true",
+        help="Run pipeline in Viral mode"
+    )
 
-# STEP TOGGLES — TURN STEPS ON/OFF HERE
+    parser.add_argument(
+        "-t", "--taxonomy",
+        required=True,
+        help="Taxonomy CSV file"
+    )
 
+    # OPTIONAL INPUTS
+    parser.add_argument("--threads", type=int, default=8)
+    parser.add_argument("--annotate", type=str, choices=["true", "false"], default="true")
+    parser.add_argument("--TM_Threshold", type=float, default=0.5)
+    parser.add_argument("--Paralog_TM_Threshold", type=float, default=0.8)
+    parser.add_argument("--sensitivity", type=float, default=9.5)
 
-RUN_STEP1 = True   # Foldseek RBH
-RUN_STEP1B = True      # Paralog Identification
-RUN_STEP2 = True       # Annotation Pipeline
-RUN_STEP3 = True       # Annotation Comparison
-RUN_STEP4 = True       # Pairwise RBH AAI
-RUN_STEP5 = True       # Foldseek vs AAI comparison (Part 5)
-RUN_STEP6 = True       # Make merged File with AAI and ASI
-RUN_STEP7 = True
-RUN_PLDDT = True
-RUN_ANNOTATION = True
-
-# USER CONFIGURATION (ALL SETTINGS LIVE HERE)
-
-
-# ---- Script paths ----
-SCRIPT1 = "/storage2/scratch/pbadciong/ASI/FoldseekerSuite/FoldseekerAllinOne/ASI_Foldseek.py"
-SCRIPT1B = "/storage2/scratch/pbadciong/ASI/FoldseekerSuite/FoldseekerAllinOne/ASI_Paralogs.py"
-SCRIPT2 = "/storage2/scratch/pbadciong/ASI/FoldseekerSuite/FoldseekerAllinOne/ASI_Annotate.py"
-SCRIPT3 = "/storage2/scratch/pbadciong/ASI/FoldseekerSuite/FoldseekerAllinOne/ASI_Quality.py"
-SCRIPT4 = "/storage2/scratch/pbadciong/ASI/FoldseekerSuite/FoldseekerAllinOne/ASI_AAI.py"
-SCRIPT5 = "/storage2/scratch/pbadciong/ASI/FoldseekerSuite/FoldseekerAllinOne/ASI_AAI_Compare.py"
-SCRIPT6 = "/storage2/scratch/pbadciong/ASI/FoldseekerSuite/FoldseekerAllinOne/ASI_Merged_Bacterial.py"
-SCRIPT6B = "/storage2/scratch/pbadciong/ASI/FoldseekerSuite/FoldseekerAllinOne/ASI_Merged_Viral.py"
-SCRIPT7 = "/storage2/scratch/pbadciong/ASI/FoldseekerSuite/FoldseekerAllinOne/ASI_Boxplot_Bacterial.py"
-SCRIPT7B = "/storage2/scratch/pbadciong/ASI/FoldseekerSuite/FoldseekerAllinOne/ASI_Boxplot_Viral.py"
-
-# ---- Unified parameters ----
-WORKDIR = "/storage2/scratch/pbadciong/ASI/TestingFolder/376_Bacteria"
-THREADS = 64
-
-# Subdirectories automatically created
-WORKDIR_1 = f"{WORKDIR}/foldseek"
-WORKDIR_1B = f"{WORKDIR}/paralogs"
-WORKDIR_2 = f"{WORKDIR}/sequence"
-WORKDIR_3 = f"{WORKDIR}/annotation_comparison"
-WORKDIR_4 = f"{WORKDIR}/pairwise_rbh_aai"
-WORKDIR_5 = f"{WORKDIR}/foldseek_vs_aai_comparison"
-
-# ---- Script 1 parameters ----
-INPUT_DIR = "/storage2/scratch/pbadciong/Average_Structural_ID/ESMFoldPredictedPDBFiles"
-SENSITIVITY = "9.5"
-TM_THRESHOLD = 0.50
-PARALOG_TM_THRESHOLD = 0.8
-
-# ---- Script 2 parameters ----
-FAA_FOLDER = "/storage2/scratch/pbadciong/Average_Structural_ID/ASI_Prodigal_Proteins"
-
-DIAMOND = "/usr/bin/diamond"
-HMMSEARCH = "/usr/bin/hmmsearch"
-# Viral vs Bacterial taxonomy files
-VIRAL_TAXONOMY = "/storage2/scratch/pbadciong/Average_Structural_ID/ICTV_Taxonomy.csv"
-BACTERIAL_TAXONOMY = "/storage2/scratch/pbadciong/Average_Structural_ID/Automated_Bacteria_Taxonomy.csv"
-# Select taxonomy file based on MODE
-if MODE == "viral":
-    ACTIVE_TAXONOMY = VIRAL_TAXONOMY
-else:
-    ACTIVE_TAXONOMY = BACTERIAL_TAXONOMY
-
-
-# Viral vs Bacterial HMM + Annotation files
-VIRAL_MERGED_HMM = "/storage2/scratch/pbadciong/Average_Structural_ID/PhrogAndVog/PhrogAndVog.hmm"
-VIRAL_MERGED_ANNOT = "/storage2/scratch/pbadciong/Average_Structural_ID/PhrogAndVog/MergedPhrogVog.tsv"
-
-BACTERIAL_MERGED_HMM = "/storage2/scratch/pbadciong/Average_Structural_ID/BacterialHMMs/profiles.hmm"
-BACTERIAL_MERGED_ANNOT = "/storage2/scratch/pbadciong/Average_Structural_ID/BacterialHMMs/KEGG_Annotations.tsv"
-
-# Select HMM + annotation files based on MODE
-if MODE == "viral":
-    ACTIVE_MERGED_HMM = VIRAL_MERGED_HMM
-    ACTIVE_MERGED_ANNOT = VIRAL_MERGED_ANNOT
-else:
-    ACTIVE_MERGED_HMM = BACTERIAL_MERGED_HMM
-    ACTIVE_MERGED_ANNOT = BACTERIAL_MERGED_ANNOT
-
-
-EVALUE = 1e-5
-
-#Part 4 AAI_cutoff
-AAI_CUTOFF = 30.0
-COVERAGE_CUTOFF = 0.50
+    return parser.parse_args()
 
 
 
-
-# UTILITIES
+# Utility functions
 
 
 def run(cmd):
@@ -109,23 +70,83 @@ def check_exists(path):
         sys.exit(1)
 
 
+
 # MAIN PIPELINE
 
 
 def main():
 
+    args = parse_args()
+
+    # Required inputs
+    FAA_FOLDER = args.aminoacids
+    INPUT_DIR = args.structures
+    WORKDIR = args.output
+    ACTIVE_TAXONOMY = args.taxonomy
+
+    # Mode selection
+    MODE = "viral" if args.viral else "bacterial"
+
+    # Optional inputs
+    THREADS = args.threads
+    RUN_ANNOTATION = (args.annotate.lower() == "true")
+    TM_THRESHOLD = args.TM_Threshold
+    PARALOG_TM_THRESHOLD = args.Paralog_TM_Threshold
+    SENSITIVITY = args.sensitivity
+
+    # Step toggles (same as your original script)
+    RUN_STEP1 = True
+    RUN_STEP1B = True
+    RUN_STEP2 = True
+    RUN_STEP3 = True
+    RUN_STEP4 = True
+    RUN_STEP5 = True
+    RUN_STEP6 = True
+    RUN_STEP7 = True
+    RUN_PLDDT = True
+
+    # Script paths (unchanged)
+    SCRIPT1 = "ASI_Compare_Scripts/ASI_Foldseek.py"
+    SCRIPT1B = "ASI_Compare_Scripts/ASI_Paralogs.py"
+    SCRIPT2 = "ASI_Compare_Scripts/ASI_Annotate.py"
+    SCRIPT3 = "ASI_Compare_Scripts/ASI_Quality.py"
+    SCRIPT4 = "ASI_Compare_Scripts/ASI_AAI.py"
+    SCRIPT5 = "ASI_Compare_Scripts/ASI_AAI_Compare.py"
+    SCRIPT6 = "ASI_Compare_Scripts/ASI_Merged_Bacterial.py"
+    SCRIPT6B = "ASI_Compare_Scripts/ASI_Merged_Viral.py"
+    SCRIPT7 = "ASI_Compare_Scripts/ASI_Boxplot_Bacterial.py"
+    SCRIPT7B = "ASI_Compare_Scripts/ASI_Boxplot_Viral.py"
+
+    # Workdir subfolders
+    WORKDIR_1 = f"{WORKDIR}/foldseek"
+    WORKDIR_1B = f"{WORKDIR}/paralogs"
+    WORKDIR_2 = f"{WORKDIR}/sequence"
+    WORKDIR_3 = f"{WORKDIR}/annotation_comparison"
+    WORKDIR_4 = f"{WORKDIR}/pairwise_rbh_aai"
+    WORKDIR_5 = f"{WORKDIR}/foldseek_vs_aai_comparison"
+
+    # AAI parameters
+    DIAMOND = "/usr/bin/diamond"
+    HMMSEARCH = "/usr/bin/hmmsearch"
+    EVALUE = 1e-5
+    AAI_CUTOFF = 30.0
+    COVERAGE_CUTOFF = 0.50
+
+    # Mode-specific HMMs
+    if MODE == "viral":
+        ACTIVE_MERGED_HMM = "HMMs/PhrogAndVog.hmm"
+        ACTIVE_MERGED_ANNOT = "HMMs/MergedPhrogVog.tsv"
+    else:
+        ACTIVE_MERGED_HMM = "HMMs/profiles.hmm"
+        ACTIVE_MERGED_ANNOT = "HMMs/KEGG_Annotations.tsv"
+
     # Ensure workdirs exist
-    Path(WORKDIR_1).mkdir(parents=True, exist_ok=True)
-    Path(WORKDIR_1B).mkdir(parents=True, exist_ok=True)
-    Path(WORKDIR_2).mkdir(parents=True, exist_ok=True)
-    Path(WORKDIR_3).mkdir(parents=True, exist_ok=True)
-    Path(WORKDIR_4).mkdir(parents=True, exist_ok=True)
-    Path(WORKDIR_5).mkdir(parents=True, exist_ok=True)
-
+    for d in [WORKDIR_1, WORKDIR_1B, WORKDIR_2, WORKDIR_3, WORKDIR_4, WORKDIR_5]:
+        Path(d).mkdir(parents=True, exist_ok=True)
 
     
-    # STEP 1
-    
+    # STEP 1 — Foldseek RBH
+   
     if RUN_STEP1:
         print("\n==============================")
         print(" STEP 1: Running Foldseek RBH ")
@@ -144,54 +165,41 @@ def main():
         tm_tsv = f"{WORKDIR_1}/pairwise_RBH_matches_TMfiltered.tsv"
         all_tsv = f"{WORKDIR_1}/pairwise_RBH_matches_ALL.tsv"
 
-        print("\nChecking Script 1 outputs...")
         check_exists(tm_tsv)
         check_exists(all_tsv)
-
-        print("✓ Found TM-filtered RBH file")
-        print("✓ Found ALL RBH file")
 
     else:
         tm_tsv = f"{WORKDIR_1}/pairwise_RBH_matches_TMfiltered.tsv"
         check_exists(tm_tsv)
-        print("\n[SKIP] Step 1 disabled — using existing RBH file")
-
-
-        
-        # STEP 1B — Paralog Detection (within-genome)
-        
-        if RUN_STEP1B:
-            print("\n==============================")
-            print(" STEP 1B: Detecting Paralogs  ")
-            print("==============================")
-
-            cmd1b = (
-                f"python3 {SCRIPT1B} "
-                f"--input-dir {INPUT_DIR} "
-                f"--workdir {WORKDIR_1B} "
-                f"--threads {THREADS} "
-                f"--sensitivity {SENSITIVITY} "
-                f"--tm-threshold {PARALOG_TM_THRESHOLD}"
-            )
-
-            run(cmd1b)
-
-            paralog_tsv = f"{WORKDIR_1B}/paralogs_TM0.8.tsv"
-            check_exists(paralog_tsv)
-            print("✓ Paralog file generated:", paralog_tsv)
-
-        else:
-            print("\n[SKIP] Step 1B disabled")
-
 
     
-    # STEP 2
+    # STEP 1B — Paralog detection
+   
+    if RUN_STEP1B:
+        print("\n==============================")
+        print(" STEP 1B: Detecting Paralogs  ")
+        print("==============================")
+
+        cmd1b = (
+            f"python3 {SCRIPT1B} "
+            f"--input-dir {INPUT_DIR} "
+            f"--workdir {WORKDIR_1B} "
+            f"--threads {THREADS} "
+            f"--sensitivity {SENSITIVITY} "
+            f"--tm-threshold {PARALOG_TM_THRESHOLD}"
+        )
+        run(cmd1b)
+
+        paralog_tsv = f"{WORKDIR_1B}/paralogs_TM0.8.tsv"
+        check_exists(paralog_tsv)
+
     
+    # STEP 2 — AAI Pipeline
+   
     if RUN_STEP2:
         print("\n==============================")
         print(" STEP 2: Running AAI Pipeline ")
         print("==============================")
-
 
         cmd2 = (
             f"python3 {SCRIPT2} "
@@ -211,14 +219,10 @@ def main():
 
         run(cmd2)
 
-    else:
-        print("\n[SKIP] Step 2 disabled — using existing AAI output")
-
     final_csv = f"{WORKDIR_2}/ALL_GENOMES_FINAL.csv"
     check_exists(final_csv)
 
-    
-    # STEP 3
+    # STEP 3 — Annotation Comparison
     
     if RUN_STEP3:
         print("\n==============================")
@@ -233,12 +237,9 @@ def main():
         )
         run(cmd3)
 
-    else:
-        print("\n[SKIP] Step 3 disabled")
+    
+    # STEP 4 — Pairwise RBH AAI
 
-    
-    # STEP 4
-    
     if RUN_STEP4:
         print("\n==============================")
         print(" STEP 4: Pairwise RBH AAI     ")
@@ -254,12 +255,9 @@ def main():
         )
         run(cmd4)
 
-    else:
-        print("\n[SKIP] Step 4 disabled")
-
     
-    # STEP 5
-    
+    # STEP 5 — Foldseek vs AAI RBH
+   
     if RUN_STEP5:
         print("\n==============================")
         print(" STEP 5: Foldseek vs AAI RBH  ")
@@ -268,28 +266,26 @@ def main():
         tm_tsv = f"{WORKDIR_1}/pairwise_RBH_matches_TMfiltered.tsv"
         aai_csv = f"{WORKDIR_4}/all_rbh_proteins.csv"
         pdb_dir = f"{WORKDIR_1}/split"
-
-        check_exists(tm_tsv)
-        check_exists(aai_csv)
-        check_exists(pdb_dir)
-
         map_file = f"{WORKDIR_1}/protein_map.tsv"
-        check_exists(map_file)
+
+        for f in [tm_tsv, aai_csv, pdb_dir, map_file]:
+            check_exists(f)
 
         cmd5 = (
             f"python3 {SCRIPT5} "
-            f"--tm-tsv {WORKDIR_1}/pairwise_RBH_matches_TMfiltered.tsv "
+            f"--tm-tsv {tm_tsv} "
             f"--tm-bidir {WORKDIR_1}/pairwise_TM_bidirectional.tsv "
-            f"--aai-csv {WORKDIR_4}/all_rbh_proteins.csv "
-            f"--pdb-dir {WORKDIR_1}/split "
-            f"--map-file {WORKDIR_1}/protein_map.tsv "
+            f"--aai-csv {aai_csv} "
+            f"--pdb-dir {pdb_dir} "
+            f"--map-file {map_file} "
             f"--outdir {WORKDIR_5} "
             f"{'--compute-plddt' if RUN_PLDDT else ''}"
         )
-
-
         run(cmd5)
 
+    
+    # STEP 6 — Merge TM RBH + AAI
+   
     if RUN_STEP6:
         print("\n==============================")
         print(" STEP 6: Merge TM RBH with AAI")
@@ -304,12 +300,11 @@ def main():
             f"--taxonomy {ACTIVE_TAXONOMY} "
             f"--outdir {WORKDIR}/tm_with_aai"
         )
-
         run(cmd6)
 
         
-        # STEP 7
-        
+        # STEP 7 — Figures
+       
         if RUN_STEP7:
             print("\n==============================")
             print(" STEP 7: Taxonomic TM vs AAI Figures ")
@@ -327,22 +322,13 @@ def main():
                 f"python3 {script7_to_run} "
                 f"--input {merged_input} "
                 f"--outdir {fig_outdir}"
-        )
-
+            )
             run(cmd7)
-
-        else:
-            print("\n[SKIP] Step 7 disabled")
-
-
-
-    else:
-        print("\n[SKIP] Step 5 disabled")
-
 
     print("\n==============================")
     print(" FULL PIPELINE COMPLETE ")
     print("==============================")
+
 
 if __name__ == "__main__":
     main()
