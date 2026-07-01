@@ -1,6 +1,6 @@
 # Determining Average Structural Identity
 
-## 1. Obtaining Whole Genomes Using NCBI Taxonomy and Genome Browser
+## 1. Obtaining Whole Bacterial/Archaeal Genomes Using NCBI Taxonomy and Genome Browser
 
 1. **To quickly obtain genomes:**  
    - Download a TSV file containing the genomes you want.  
@@ -10,42 +10,36 @@
    - Run `TaxonomyAdder.py` using the `.csv` file given from `NCBIDownloader.py`.  
    - This will give a taxonomy from domain to genus for every genome added.  
    - You will need to have **Ete3 installed** or run in a **conda environment**.
+  
+## 1.1 Obtaining Viral Genomes using ICTV taxonomy
+   - Download the viral Genomes you wish to compare, and use the ICTV taxonomy file already provided
 
 ---
 
-## 2. Embedding with the ESM2 Model
+## 2. 3D Structural Predictions
 
 1. **Requirements:**  
-   - ESM2 embeddings are GPU-dependent, so you will need access to a GPU.  
-   - Alternatively, you can use the Colab notebook: `ColabESM2Embedder.ipynb`.
-
-2. **Model:**  
-   - For the current edition of this project, use the **ESM2-T6-M8** model.
+   - ESMFold is GPU dependant, access to a cluster is advised for large scale predictions.  
+   - Alternatively, you can use the Colab notebook provided for single whole genome predictions.
+   - A local machine version is currently in the works for batch prediction of whole genome protein structures
 
 ---
 
-## 3. Running a Pairwise Comparison
+## 3. Running ASI_Compare
 
-1. Using the ESM2 Embedded files, run `ESM2Compare.py`.
-   - Select count for threads used; depending on the number of genomes, the time will increase greatly under the formula:
-
-$$
-\text{Total Comparisons} = \frac{n \cdot (n - 1)}{2}
-$$
-
-2. Run `StatisticalTaxonomyTest.py` using your pairwise comparisons from `ESM2Compare.py` and your taxonomy file from `TaxonomyAdder.py`.
-
-3.  This will provide an output based on different scores
-      - Greedy-1to1-avg
-      - symmetric-avg
-      - Avg-rbh-score
-      - rbh-fraction-symmetric
-  
-4.  This values provide the final score using the formula
-   
-$$
-\text{Average score} = \frac{(\texttt{avg-rbh-score} \times \texttt{rbh-fraction-symmetric}) + \texttt{symmetric-avg}}{2}
-$$
+1. Using the predicted ESMFold structures and their original protein fasta files.
+   - Inputs Required
+     * -a/--aminoacids Folder containing the original protein fasta files
+     * -s/--structures Folder containing the predicted protein structures
+     * -o/--output Output directory
+     * -b for bacterial/archaeal -v for viral
+     * -t/--taxonomy Taxonomy.csv file
+   - Optional Inputs
+     * --threads (default 8)
+     * --annotate true/false (default True)
+     * --TM_Threshold (default 0.5)
+     * --Paralog_TM_Threshold (default 0.8)
+     * --sensitivity (default 9.5)
 
 
 
