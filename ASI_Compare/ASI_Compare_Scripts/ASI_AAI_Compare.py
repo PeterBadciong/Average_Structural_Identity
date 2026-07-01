@@ -5,9 +5,9 @@ import argparse
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-# ============================================================
+
 # ARGPARSE
-# ============================================================
+
 
 parser = argparse.ArgumentParser(
     description="Part 5: Compare Foldseek RBHs and AAI RBHs with PDB diagnostics + pLDDT + bidirectional TM"
@@ -47,9 +47,9 @@ OUTDIR.mkdir(parents=True, exist_ok=True)
 
 N_THREADS = max(1, args.threads)
 
-# ============================================================
+
 # HELPERS
-# ============================================================
+
 
 def chunked_iterable(iterable, size=10000):
     chunk = []
@@ -61,9 +61,9 @@ def chunked_iterable(iterable, size=10000):
     if chunk:
         yield chunk
 
-# ============================================================
+
 # OUTPUT PATHS
-# ============================================================
+
 
 FOLDSEEK_ONLY_OUT = OUTDIR / "Foldseek_Exclusive.csv"
 AAI_ONLY_OUT = OUTDIR / "AAI_Exclusive.csv"
@@ -71,9 +71,9 @@ BOTH_OUT = OUTDIR / "Foldseek_and_AAI.csv"
 STATS_OUT = OUTDIR / "Part5_Stats.csv"
 GENOME_SUMMARY_OUT = OUTDIR / "Genome_Pair_Summary.csv"
 
-# ============================================================
+
 # LOAD PROTEIN→GENOME MAP
-# ============================================================
+
 
 protein_to_genome = {}
 with open(MAP_FILE) as f:
@@ -81,9 +81,9 @@ with open(MAP_FILE) as f:
         p, g = line.strip().split("\t")
         protein_to_genome[p] = g
 
-# ============================================================
+
 # LOAD PARALOG INFORMATION
-# ============================================================
+
 
 PARALOG_FILE = OUTDIR.parent / "paralogs" / "paralogs_TM0.8.tsv"
 paralog_members = set()
@@ -101,9 +101,9 @@ if PARALOG_FILE.exists():
 else:
     print(f"[WARNING] No paralog file found at {PARALOG_FILE}")
 
-# ============================================================
+
 # pLDDT EXTRACTION (PARALLELIZED)
-# ============================================================
+
 
 def compute_plddt(pdb_path: Path):
     if not pdb_path.exists():
@@ -124,9 +124,9 @@ def pdb_info_single(protein_id: str):
     plddt = compute_plddt(pdb_path) if exists and args.compute_plddt else None
     return protein_id, exists, plddt
 
-# ============================================================
+
 # NORMALIZATION
-# ============================================================
+
 
 def normalize_pair(pA, pB):
     gA = protein_to_genome[pA]
@@ -139,9 +139,9 @@ def normalize_pair(pA, pB):
     else:
         return gA, gB, min(pA, pB), max(pA, pB)
 
-# ============================================================
+
 # LOAD TM-FILTERED FOLDSEEK RBHs (PARALLEL)
-# ============================================================
+
 
 foldseek_pairs = {}
 
@@ -174,9 +174,9 @@ with ThreadPoolExecutor(max_workers=N_THREADS) as ex:
     for fut in as_completed(futures):
         foldseek_pairs.update(fut.result())
 
-# ============================================================
+
 # LOAD BIDIRECTIONAL TM (PARALLEL)
-# ============================================================
+
 
 bidir_tm = {}
 
@@ -210,9 +210,9 @@ with ThreadPoolExecutor(max_workers=N_THREADS) as ex:
     for fut in as_completed(futures):
         bidir_tm.update(fut.result())
 
-# ============================================================
+
 # LOAD NO-CUTOFF FOLDSEEK MATCHES (ALL.tsv, PARALLEL)
-# ============================================================
+
 
 NO_CUTOFF_FILE = TM_TSV.replace("TMfiltered", "ALL")
 no_cutoff_scores = {}
@@ -245,9 +245,9 @@ with ThreadPoolExecutor(max_workers=N_THREADS) as ex:
     for fut in as_completed(futures):
         no_cutoff_scores.update(fut.result())
 
-# ============================================================
+
 # LOAD AAI RBHs (WITH COVERAGE, PARALLEL)
-# ============================================================
+
 
 aai_pairs = {}
 
@@ -289,9 +289,9 @@ with ThreadPoolExecutor(max_workers=N_THREADS) as ex:
     for fut in as_completed(futures):
         aai_pairs.update(fut.result())
 
-# ============================================================
+
 # PRECOMPUTE PDB INFO IN PARALLEL
-# ============================================================
+
 
 all_proteins = set()
 for (_, _, pA, pB) in foldseek_pairs.keys():
@@ -320,9 +320,9 @@ with ThreadPoolExecutor(max_workers=N_THREADS) as ex:
 def pdb_info(protein_id):
     return pdb_cache.get(protein_id, (False, None))
 
-# ============================================================
+
 # SETS AND CATEGORIES
-# ============================================================
+
 
 fs_keys = set(foldseek_pairs.keys())
 aai_keys = set(aai_pairs.keys())
@@ -331,9 +331,9 @@ both_keys = fs_keys & aai_keys
 fs_only_keys = fs_keys - aai_keys
 aai_only_keys = aai_keys - fs_keys
 
-# ============================================================
+
 # WRITE CATEGORY CSVs
-# ============================================================
+
 
 def write_category_csv(path, rows, extra_fields=None):
     base_fields = [
@@ -449,9 +449,9 @@ for gA, gB, pA, pB in both_keys:
 
 write_category_csv(BOTH_OUT, both_rows)
 
-# ============================================================
+
 # pLDDT THRESHOLD STATS
-# ============================================================
+
 
 def compute_avg_plddt(row):
     A = row["pLDDT_A"]
@@ -480,9 +480,9 @@ aai_plddt_stats = count_thresholds(aai_only_rows)
 both_plddt_stats = count_thresholds(both_rows)
 
 
-# ============================================================
+
 # STATS CSV
-# ============================================================
+
 
 aai_exclusive_with_paralog = sum(
     1
@@ -512,9 +512,9 @@ with open(STATS_OUT, "w", newline="") as f:
         w.writerow({"Category": f"Both_pLDDT_{label}", "Count": count})
 
 
-# ============================================================
+
 # GENOME SUMMARY
-# ============================================================
+
 
 tm_stats = defaultdict(lambda: {"tm_sum": 0.0, "alntm_sum": 0.0, "count": 0})
 aai_stats = defaultdict(lambda: {"aai_sum": 0.0, "count": 0})
