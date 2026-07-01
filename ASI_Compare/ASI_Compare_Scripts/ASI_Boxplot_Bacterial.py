@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 import argparse
 
-# ============================================================
+
 # ARGPARSE
-# ============================================================
+
 
 parser = argparse.ArgumentParser(description="Part 7: Boxplot of Avg_TM and Mean_AAI by taxonomic rank")
 
@@ -23,16 +23,16 @@ INPUT = args.input
 OUTDIR = Path(args.outdir)
 OUTDIR.mkdir(parents=True, exist_ok=True)
 
-# ============================================================
+
 # LOAD DATA
-# ============================================================
+
 
 df = pd.read_csv(INPUT)
 df.columns = df.columns.str.strip()
 
-# ============================================================
+
 # DETERMINE CLOSEST TAXONOMIC RANK
-# ============================================================
+
 
 tax_levels = ["Domain", "Kingdom", "Phylum", "Class", "Order", "Family", "Genus"]
 
@@ -44,9 +44,9 @@ def closest_rank(row):
 
 df["Closest_Taxonomic_Rank"] = df.apply(closest_rank, axis=1)
 
-# ============================================================
+
 # BOXPLOT: Avg_TM vs Mean_AAI by taxonomic rank
-# ============================================================
+
 
 rank_order = ["Interdomain", "Domain", "Kingdom", "Phylum", "Class", "Order", "Family", "Genus"]
 
@@ -67,9 +67,9 @@ for rank in rank_order:
     plot_data_aai.append(aai_vals)
     labels.append(f"{rank}\n(n={len(subset)})")
 
-# ============================================================
+
 # DRAW FIGURE
-# ============================================================
+
 
 plt.figure(figsize=(14, 7))
 
