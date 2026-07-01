@@ -5,9 +5,9 @@ import os
 from concurrent.futures import ProcessPoolExecutor
 import argparse
 
-# ============================================================
-# ARGPARSE (RETROFITTED)
-# ============================================================
+
+# ARGPARSE 
+
 
 parser = argparse.ArgumentParser(description="Legacy AAI + Annotation Pipeline (Argparse Retrofitted)")
 
@@ -43,9 +43,9 @@ parser.add_argument("--workdir", required=True,
 
 args = parser.parse_args()
 
-# ============================================================
+
 # ASSIGN ARGUMENTS TO ORIGINAL VARIABLE NAMES
-# ============================================================
+
 
 INPUT_TSV = args.input_tsv
 FAA_FOLDER = args.faa_folder
@@ -71,18 +71,18 @@ os.environ["OMP_NUM_THREADS"] = str(THREADS)
 Path(WORK_DIR).mkdir(parents=True, exist_ok=True)
 Path(TMP_DIR).mkdir(parents=True, exist_ok=True)
 
-# ============================================================
+
 # NORMALIZATION
-# ============================================================
+
 
 def norm_id(x):
     if x is None:
         return None
     return str(x).strip().split()[0]
 
-# ============================================================
+
 # FASTA UTILITIES
-# ============================================================
+
 
 def load_fasta(path):
     seqs = {}
@@ -112,9 +112,9 @@ def write_fasta(seqs, out_file):
         for k, v in seqs.items():
             f.write(f">{k}\n{v}\n")
 
-# ============================================================
+
 # TSV PARSING
-# ============================================================
+
 
 def parse_tsv(tsv_file):
     pairs = []
@@ -141,9 +141,9 @@ def parse_tsv(tsv_file):
 
     return pairs, proteins
 
-# ============================================================
+
 # CHUNKING
-# ============================================================
+
 
 def chunk_dict(d, size):
     items = list(d.items())
@@ -156,9 +156,9 @@ def write_chunk_fasta(seqs, chunk_id):
     write_fasta(seqs, path)
     return path
 
-# ============================================================
+
 # HMM WORKER
-# ============================================================
+
 
 def run_hmm_chunk(args):
     faa_file, chunk_id = args
@@ -177,9 +177,9 @@ def run_hmm_chunk(args):
     subprocess.run(cmd, check=True)
     return out_tbl
 
-# ============================================================
+
 # HMM PARSER
-# ============================================================
+
 
 def parse_hmm_tbl(tbl_file):
     best_hits = {}
@@ -215,9 +215,9 @@ def parse_hmm_tbl(tbl_file):
 
     return best_hits
 
-# ============================================================
+
 # ANNOTATION TABLE
-# ============================================================
+
 
 def load_annotation_table(path):
     ann = {}
@@ -234,9 +234,9 @@ def load_annotation_table(path):
 
     return ann
 
-# ============================================================
+
 # MAIN
-# ============================================================
+
 
 def main():
 
