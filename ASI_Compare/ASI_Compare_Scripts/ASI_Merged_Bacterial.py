@@ -3,9 +3,9 @@ import pandas as pd
 from pathlib import Path
 import argparse
 
-# ============================================================
+
 # ARGPARSE
-# ============================================================
+
 
 parser = argparse.ArgumentParser(description="Part 6: Merge TMfiltered RBH + AAI + Taxonomy")
 
@@ -31,9 +31,9 @@ OUTDIR.mkdir(parents=True, exist_ok=True)
 
 OUTPUT = OUTDIR / "TMfiltered_with_AAI_and_Taxonomy.csv"
 
-# ============================================================
+
 # LOAD FILES
-# ============================================================
+
 
 tm_df = pd.read_csv(TM_CSV)
 aai_df = pd.read_csv(AAI_SUMMARY)
@@ -43,9 +43,9 @@ tm_df.columns = tm_df.columns.str.strip()
 aai_df.columns = aai_df.columns.str.strip()
 tax_df.columns = tax_df.columns.str.strip()
 
-# ============================================================
+
 # NORMALIZE GENOME PAIR ORDERING
-# ============================================================
+
 
 def normalize_pair(a, b):
     a = str(a).strip()
@@ -62,9 +62,9 @@ aai_df["NormA"], aai_df["NormB"] = zip(*aai_df.apply(
     axis=1
 ))
 
-# ============================================================
+
 # MERGE TM RBHs WITH AAI SUMMARY
-# ============================================================
+
 
 merged = tm_df.merge(
     aai_df[["NormA", "NormB", "Mean_AAI", "Total_RBH"]],
@@ -72,9 +72,9 @@ merged = tm_df.merge(
     how="left"
 )
 
-# ============================================================
+
 # RENAME COLUMNS
-# ============================================================
+
 
 rename_map = {
     "RBH_count": "ASI_RBHs",
@@ -85,40 +85,40 @@ for old, new in rename_map.items():
     if old in merged.columns:
         merged = merged.rename(columns={old: new})
 
-# ============================================================
+
 # CLEAN UP TEMP COLUMNS
-# ============================================================
+
 
 merged = merged.drop(columns=["NormA", "NormB"])
 
-# ============================================================
+
 # NORMALIZE TAXONOMY KEY
-# ============================================================
+
 
 tax_df = tax_df.rename(columns={"File": "Genome"})
 tax_df["Genome"] = tax_df["Genome"].astype(str).str.strip()
 
-# ============================================================
+
 # MERGE TAXONOMY FOR GENOME_A
-# ============================================================
+
 
 taxA = tax_df.copy()
 taxA.columns = ["Genome_A"] + [f"{c}_A" for c in tax_df.columns if c != "Genome"]
 
 merged = merged.merge(taxA, on="Genome_A", how="left")
 
-# ============================================================
+
 # MERGE TAXONOMY FOR GENOME_B
-# ============================================================
+
 
 taxB = tax_df.copy()
 taxB.columns = ["Genome_B"] + [f"{c}_B" for c in tax_df.columns if c != "Genome"]
 
 merged = merged.merge(taxB, on="Genome_B", how="left")
 
-# ============================================================
+
 # SAVE OUTPUT
-# ============================================================
+
 
 merged.to_csv(OUTPUT, index=False)
 
