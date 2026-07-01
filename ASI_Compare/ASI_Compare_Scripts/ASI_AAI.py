@@ -7,9 +7,9 @@ import pandas as pd
 import argparse
 from multiprocessing import Pool
 
-# ============================================================
+
 # ARGPARSE
-# ============================================================
+
 
 parser = argparse.ArgumentParser(description="Parallel Pairwise RBH AAI Calculator")
 
@@ -36,9 +36,9 @@ PARALLEL_JOBS = args.threads     # <-- now controls parallelism
 MIN_AAI = args.aai_cutoff
 MIN_COV = args.cov_cutoff
 
-# ============================================================
+
 # UTILS
-# ============================================================
+
 
 def run(cmd):
     print(f"[CMD] {cmd}")
@@ -79,9 +79,9 @@ def load_protein_lengths(faa_folder):
 
 protein_lengths = load_protein_lengths(FAADIR)
 
-# ============================================================
+
 # RBH COMPUTATION
-# ============================================================
+
 
 def compute_rbh(tsv_AB, tsv_BA):
     AB = load_diamond_tsv(tsv_AB)
@@ -114,9 +114,9 @@ def compute_rbh(tsv_AB, tsv_BA):
 
     return rbh
 
-# ============================================================
+
 # PARALLEL JOB FUNCTION
-# ============================================================
+
 
 def process_pair(pair):
     A, B = pair
@@ -172,9 +172,9 @@ def process_pair(pair):
 
     return summary, details
 
-# ============================================================
+
 # MAIN
-# ============================================================
+
 
 def main():
     os.makedirs(OUTDIR, exist_ok=True)
